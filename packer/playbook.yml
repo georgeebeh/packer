@@ -1,0 +1,126 @@
+---
+- name: Install Essential Software  
+  hosts: web
+  become: true
+  gather_facts: false
+  roles:
+  - m18unet.terraform
+  tasks:
+  - name: Update the apt cache
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+
+  - name: Install prerequisites
+    package:
+      name: python3
+      state: present
+    
+      
+
+  - name: Download AWS CLI
+    get_url:
+      url: "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip"
+      dest: "/tmp/awscli-exe-linux-x86_64.zip"
+
+  - name: Unzip AWS CLI
+    unarchive:
+      src: "/tmp/awscli-exe-linux-x86_64.zip"
+      dest: "/tmp"
+      remote_src: yes
+
+  - name: Install AWS CLI
+    command: >
+       /tmp/aws/install --bin-dir /usr/bin --install-dir /usr/aws-cli --update
+    args:
+      warn: false
+
+
+  - name: Download CloudWatch Agent
+    get_url:
+      url: "https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb"
+      dest: "/tmp/amazon-cloudwatch-agent.deb"
+
+  - name: Install CloudWatch Agent
+    command: >
+      dpkg -i /tmp/amazon-cloudwatch-agent.deb
+    args:
+      warn: false
+
+
+  - name: Download SSM Agent
+    get_url:
+      url: "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb"
+      dest: "/tmp/amazon-ssm-agent.deb"
+
+  - name: Install SSM Agent
+    command: >
+      dpkg -i /tmp/amazon-ssm-agent.deb
+    args:
+      warn: false
+
+  
+  
+  - name: Start SSM Agent
+    command: >
+      systemctl start amazon-ssm-agent
+  
+  - name: Enable SSM Agent
+    command: >
+      systemctl enable amazon-ssm-agent
+
+  - name: Enable CloudWatch Agent
+    command: >
+      systemctl enable amazon-cloudwatch-agent
+
+  - name: Install Docker
+    apt:
+      name: docker.io
+      state: present
+  - name: Install Docker Compose
+    apt:
+      name: docker-compose
+      state: present
+
+  - name: Add ubuntu to docker group
+    user:
+      name: ubuntu
+      groups: docker
+      append: yes
+
+  - name: Start Docker
+    service:
+      name: docker
+      state: started
+      enabled: yes
+  
+  - name: install Git
+    apt:
+      name: git
+      state: present
+
+
+  - name: Install apt-transport-https
+    apt:
+      name: apt-transport-https
+      state: present
+
+  - name: Add Kubernetes apt-key
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+
+  - name: Add Kubernetes Repository
+    apt_repository:
+      repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+      state: present
+
+  - name: Install kubectl
+    apt:
+      update_cache: yes
+      name: kubectl
+      state: present
+
+
+ 
+  
