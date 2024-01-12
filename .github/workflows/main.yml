@@ -10,33 +10,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-
-    - name: Install dependencies
+    - name: Build with Packer
       run: |
-        sudo apt-get update
-        sudo apt-get install -y software-properties-common
-        sudo apt-add-repository --yes --update ppa:ansible/ansible
-        sudo apt-get install -y ansible
-        ansible-galaxy install m18unet.terraform
-
-    - name: Install packer
-      run: |
-        curl -o packer.zip https://releases.hashicorp.com/packer/1.7.2/packer_1.7.2_linux_amd64.zip
-        sudo -o unzip packer.zip -d /usr/local/bin/
-        rm packer.zip
-
-    - name: Validate Packer template
-      run: packer validate aws-ubuntu.pkr.hcl
-
-
-    - name: Build AMI
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      run: packer build aws-ubuntu.pkr.hcl
-        
+        docker run -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} -v $(pwd):/workspace -w /workspace hashicorp/packer:latest init .
+        docker run -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} -v $(pwd):/workspace -w /workspace hashicorp/packer:latest validate .
+        docker run -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} -v $(pwd):/workspace -w /workspace hashicorp/packer:latest build aws-ubuntu.pkr.hcl
