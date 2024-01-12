@@ -1,0 +1,11 @@
+image: hashicorp/packer:latest
+
+stages:
+  - build
+
+packer_build:
+  stage: build
+  script:
+    - packer init .
+    - packer validate .
+    - packer build aws-ubuntu.pkr.hcl
